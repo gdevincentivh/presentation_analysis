@@ -280,15 +280,16 @@ def show_data():
             st.write(f"**Customer**: {record['Customer']}")
             st.write(f"**Demo Date**: {record['Demo Date']}")
             st.write(f"**Created At**: {record['Created At']}")
-
-            # Display the "cool" bullet style analysis
+            
+            # Show the bullet-style analysis
             show_analysis_pretty(record["Analysis"])
 
-            # Provide a raw JSON expander for debugging
-            with st.expander("Raw JSON"):
+            # Optionally show raw JSON if user checks
+            show_raw = st.checkbox("Show Raw JSON", key=f"raw_{record['ID']}")
+            if show_raw:
                 st.json(record["Analysis"])
 
-            # If superadmin, show "Delete" button
+            # If superadmin, show delete button
             if current_role == "superadmin":
                 if st.button(f"Delete #{record['ID']}", key=f"del_{record['ID']}"):
                     delete_analysis_record(record['ID'])
