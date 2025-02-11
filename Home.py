@@ -13,20 +13,6 @@ st.set_page_config(
     )
 
 
-# -------------------------------------------
-# 1. Helper: Display Logo & Title
-# -------------------------------------------
-def display_header():
-    """
-    Shows a custom logo in the upper-left, with a title next to it.
-    Replace LOGO_URL with your own.
-    """
-    logo_url = st.secrets["general"]["LOGO_URL"]  # Retrieve from secrets
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        st.image(logo_url, width=80)
-    with col2:
-        st.markdown("<h1 style='padding-top: 10px;'>Demo Analysis Tool</h1>", unsafe_allow_html=True)
 
 # -------------------------------------------
 # 2. DemoAnalyzer Class
@@ -277,14 +263,15 @@ def main():
 
     # Set custom favicon and page title
     
-
-    display_header()
-
     # Load reps for dropdown
     reps_list = fetch_all_reps()  # each row = (id, rep_name, team, created_at)
     rep_names = [r[1] for r in reps_list]
 
     with st.sidebar:
+        # Logo from secrets
+        logo_url = st.secrets["general"]["LOGO_URL"]
+        st.image(logo_url, use_container_width=True)
+        
         st.header("Demo Information")
         if not rep_names:
             st.warning("No reps found. Please add reps in 'Rep Management' page.")
@@ -294,7 +281,8 @@ def main():
         
         customer_name = st.text_input("Customer")
         demo_date = st.date_input("Demo Date")
-
+        
+    st.title("Demo Analysis Tool")
     PreDemoChecklist.display()
 
     st.header("Demo Recording Analysis")

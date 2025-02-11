@@ -149,3 +149,14 @@ def fetch_all_results():
     cur.close()
     #conn.close()
     return rows
+
+def delete_analysis_record(analysis_id):
+    """
+    Delete a row from the demo_analysis table by ID.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM demo_analysis WHERE id = %s", (analysis_id,))
+    conn.commit()
+    cur.close()
+    #conn.close()

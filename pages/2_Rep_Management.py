@@ -2,21 +2,25 @@
 import streamlit as st
 from database import init_db, fetch_all_reps, insert_rep, delete_rep
 
-def display_header():
-    logo_url = st.secrets["general"]["LOGO_URL"]
-    col1, col2 = st.columns([1, 4])
-    with col1:
-        st.image(logo_url, width=80)
-    with col2:
-        st.markdown("<h1>Explore Results</h1>", unsafe_allow_html=True)
+def rep_mgmt_login_flow():
+    st.subheader("Enter Password for Rep Management")
+    with st.form("rep_mgmt_form"):
+        pwd_input = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Submit")
+        if submitted:
+            correct_pwd = st.secrets["general"]["REP_MANAGEMENT_PASSWORD"]
+            if pwd_input == correct_pwd:
+                st.session_state["rep_mgr_auth"] = True
+                st.stop()
+            else:
+                st.error("Invalid password. Please try again.")
 
-def app():
+def show_rep_management():
     st.title("Rep Management")
-    st.write("Add or remove Reps, and define their team (DME or Ortho).")
+    st.write("Add or remove reps, and define their team (DME or Ortho).")
+
     init_db()
-    display_header()
-    st.write("Exploring results...")
-    # Form to add a new Rep
+
     with st.form("add_rep_form"):
         rep_name_input = st.text_input("Rep Name")
         team_input = st.selectbox("Team", ["DME", "Ortho"])
@@ -38,12 +42,24 @@ def app():
             with col1:
                 st.write(f"**{rep_name}** - {team}")
             with col2:
-                st.write(f"{created_at}")
+                st.write(str(created_at))
             with col3:
                 if st.button(f"Delete {rep_name}", key=f"del_{rep_id}"):
                     delete_rep(rep_id)
                     st.warning(f"Deleted rep '{rep_name}'.")
-                    st.experimental_rerun()
+                    st.stop()
+
+def app():
+    if "rep_mgr_auth" not in st.session_state:
+        st.session_state["rep_mgr_auth"] = False
+
+    if not st.session_state["rep_mgr_auth"]:
+        rep_mgmt_login_flow()
+    else:
+        if st.button("Logout (Rep Management)"):
+            st.session_state["rep_mgr_auth"] = False
+            st.stop()
+        show_rep_management()
 
 def main():
     app()
