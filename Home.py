@@ -175,13 +175,13 @@ TRANSCRIPT:
 {transcript}
 """
             response = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0,
-                max_tokens=1500
+                max_tokens=15000
             )
             response_text = response.choices[0].message.content.strip()
 
@@ -208,7 +208,7 @@ TRANSCRIPT:
 
 def main():
     st.set_page_config(
-        page_title="Demo Analysis Tool",
+        page_title="Presentation Analysis Tool",
         page_icon=st.secrets["general"]["FAVICON_URL"],
         layout="wide"
     )
@@ -218,9 +218,9 @@ def main():
     # Sidebar with logo & user input
     with st.sidebar:
         logo_url = st.secrets["general"]["LOGO_URL"]
-        st.image(logo_url, use_column_width=True)
+        st.image(logo_url, use_container_width=True)
 
-        st.title("Demo Information")
+        st.title("Prensentation Information")
         reps_list = fetch_all_reps()
         rep_names = [r[1] for r in reps_list]
         if not rep_names:
