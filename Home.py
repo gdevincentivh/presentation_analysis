@@ -232,10 +232,10 @@ def main():
         customer_name = st.text_input("Customer")
         demo_date = st.date_input("Demo Date")
 
-    st.title("Demo Analysis Tool")
+    st.title("Presentation Analysis Tool")
 
     # Transcript Input
-    st.header("Demo Transcript")
+    st.header("Presentation Transcript")
     transcript = st.text_area("Paste transcript here:", height=200)
 
     if "gpt_analysis" not in st.session_state:
