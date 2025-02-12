@@ -2,6 +2,7 @@
 import streamlit as st
 import openai
 import json
+from auth import require_global_auth
 from datetime import datetime
 
 from database import init_db, fetch_all_reps, get_rep_team, insert_demo_result
@@ -207,6 +208,7 @@ TRANSCRIPT:
 #####################
 
 def main():
+    require_global_auth()
     st.set_page_config(
         page_title="Presentation Analysis Tool",
         page_icon=st.secrets["general"]["FAVICON_URL"],
