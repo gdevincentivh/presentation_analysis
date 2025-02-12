@@ -20,7 +20,7 @@ def require_global_auth():
                 correct_pwd = st.secrets["general"]["GLOBAL_APP_PASSWORD"]
                 if pwd == correct_pwd:
                     st.session_state["global_auth"] = True
-                    st.experimental_rerun()
+                    st.stop()
                 else:
                     st.error("Invalid password.")
         # We stop the script so no further code on this page runs
