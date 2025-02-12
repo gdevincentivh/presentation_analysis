@@ -89,7 +89,7 @@ def main():
     with st.sidebar:
         # Logo
         logo_url = st.secrets["general"]["LOGO_URL"]
-        st.image(logo_url, use_column_width=True)
+        st.image(logo_url, use_container_width=True)
 
         st.title("Demo Information")
         reps_list = fetch_all_reps()  # (id, rep_name, team, created_at)
