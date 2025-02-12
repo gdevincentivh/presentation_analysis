@@ -42,7 +42,7 @@ TRANSCRIPT:
 {transcript}
 """
             response = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -104,15 +104,15 @@ def main():
         customer_name = st.text_input("Customer")
         demo_date = st.date_input("Demo Date")
 
-    st.title("Demo Analysis Tool")
+    st.title("Presentation Analysis Tool")
 
-    st.header("Demo Transcript")
+    st.header("Presentation Transcript")
     transcript = st.text_area("Paste transcript here:", height=200)
 
     if "gpt_analysis" not in st.session_state:
         st.session_state["gpt_analysis"] = None
 
-    if st.button("Analyze Demo"):
+    if st.button("Analyze Presentation"):
         if not transcript.strip():
             st.error("Please paste a transcript.")
         elif not rep_name:
