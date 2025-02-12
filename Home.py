@@ -6,6 +6,139 @@ from datetime import datetime
 
 from database import init_db, fetch_all_reps, get_rep_team, insert_demo_result
 
+#####################
+# HELPER FUNCTIONS
+#####################
+
+def bullet_list(items):
+    """Displays each string in 'items' as a bullet."""
+    for i in items:
+        st.markdown(f"- {i}")
+
+def show_scores(scores: dict):
+    """Display the 'scores' section in bullet style."""
+    if not scores:
+        return
+    st.subheader("Scores")
+    for cat, val in scores.items():
+        st.write(f"**{cat.title()}**: {val}/5")
+
+def show_section(title: str, section_data: dict):
+    """
+    For sections like 'strengths', 'improvements', 'examples' that map area_name -> [bullets].
+    """
+    if not section_data:
+        return
+    st.subheader(title)
+    for area, bullets in section_data.items():
+        st.markdown(f"**{area.replace('_',' ').title()}**")
+        bullet_list(bullets)
+
+def show_pain_points(pain_points: dict):
+    """
+    'pain_points': {
+      "operational": [...],
+      "technical": [...],
+      "financial": [...],
+      "priority_level": { "some pain text":"High/Medium/Low" }
+    }
+    """
+    if not pain_points:
+        return
+    st.subheader("Pain Points")
+    for category in ["operational", "technical", "financial"]:
+        points = pain_points.get(category, [])
+        if points:
+            st.markdown(f"**{category.title()}**")
+            bullet_list(points)
+    priority_map = pain_points.get("priority_level", {})
+    if priority_map:
+        st.markdown("**Priority Levels**")
+        for key, level in priority_map.items():
+            st.write(f"- **{key}**: {level}")
+
+def show_buying_signals(buying_signals: dict):
+    """
+    'buying_signals': {"positive": [...], "concerns": [...]}
+    """
+    if not buying_signals:
+        return
+    st.subheader("Buying Signals")
+    positives = buying_signals.get("positive", [])
+    if positives:
+        st.markdown("**Positive**")
+        bullet_list(positives)
+    concerns = buying_signals.get("concerns", [])
+    if concerns:
+        st.markdown("**Concerns**")
+        bullet_list(concerns)
+
+def show_next_steps(steps: list):
+    """
+    next_steps: [
+      {"action":"...", "owner":"...", "deadline":"...", "priority":"High/Medium/Low"}
+    ]
+    """
+    if not steps:
+        return
+    st.subheader("Next Steps")
+    for i, step in enumerate(steps, start=1):
+        action = step.get("action","")
+        owner = step.get("owner","")
+        deadline = step.get("deadline","")
+        priority = step.get("priority","")
+        st.markdown(f"**Step {i}**")
+        st.write(f"- **Action**: {action}")
+        st.write(f"- **Owner**: {owner}")
+        st.write(f"- **Deadline**: {deadline}")
+        st.write(f"- **Priority**: {priority}")
+
+def show_management_summary(summary: dict):
+    """
+    'management_summary': { "key_points": [...], "decisions": [...], "risks": [...], "recommendations": [...] }
+    """
+    if not summary:
+        return
+    st.subheader("Management Summary")
+    if "key_points" in summary:
+        st.markdown("**Key Points**")
+        bullet_list(summary["key_points"])
+    if "decisions" in summary:
+        st.markdown("**Decisions**")
+        bullet_list(summary["decisions"])
+    if "risks" in summary:
+        st.markdown("**Risks**")
+        bullet_list(summary["risks"])
+    if "recommendations" in summary:
+        st.markdown("**Recommendations**")
+        bullet_list(summary["recommendations"])
+
+
+def show_analysis_pretty(analysis: dict):
+    """
+    Display the entire GPT analysis in a "cool", bullet-based style.
+    """
+    # 1) Scores
+    show_scores(analysis.get("scores", {}))
+    # 2) Strengths
+    show_section("Strengths", analysis.get("strengths", {}))
+    # 3) Improvements
+    show_section("Improvements", analysis.get("improvements", {}))
+    # 4) Examples
+    show_section("Examples", analysis.get("examples", {}))
+    # 5) Pain Points
+    show_pain_points(analysis.get("pain_points", {}))
+    # 6) Buying Signals
+    show_buying_signals(analysis.get("buying_signals", {}))
+    # 7) Next Steps
+    show_next_steps(analysis.get("next_steps", []))
+    # 8) Management Summary
+    show_management_summary(analysis.get("management_summary", {}))
+
+#####################
+# DEMO ANALYZER
+#####################
+
 class DemoAnalyzer:
     def __init__(self):
         openai.api_key = st.secrets["general"]["OPENAI_API_KEY"]
@@ -42,7 +175,7 @@ TRANSCRIPT:
 {transcript}
 """
             response = openai.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -69,14 +202,9 @@ TRANSCRIPT:
                 st.error(f"Raw GPT response: {response_text[:500]}...")
             return {}
 
-def display_analysis(analysis: dict):
-    st.header("Analysis Preview")
-    # Show a partial overview or leave it minimal.
-    scores = analysis.get("scores", {})
-    if scores:
-        st.subheader("Scores")
-        for k, v in scores.items():
-            st.write(f"- **{k.title()}**: {v}")
+#####################
+# MAIN
+#####################
 
 def main():
     st.set_page_config(
@@ -84,17 +212,17 @@ def main():
         page_icon=st.secrets["general"]["FAVICON_URL"],
         layout="wide"
     )
+    from database import init_db, fetch_all_reps, get_rep_team, insert_demo_result
     init_db()
 
+    # Sidebar with logo & user input
     with st.sidebar:
-        # Logo
         logo_url = st.secrets["general"]["LOGO_URL"]
-        st.image(logo_url, use_container_width=True)
+        st.image(logo_url, use_column_width=True)
 
         st.title("Demo Information")
-        reps_list = fetch_all_reps()  # (id, rep_name, team, created_at)
+        reps_list = fetch_all_reps()
         rep_names = [r[1] for r in reps_list]
-
         if not rep_names:
             st.warning("No reps found! Please add them in 'Rep Management'.")
             rep_name = ""
@@ -104,15 +232,17 @@ def main():
         customer_name = st.text_input("Customer")
         demo_date = st.date_input("Demo Date")
 
-    st.title("Presentation Analysis Tool")
+    st.title("Demo Analysis Tool")
 
-    st.header("Presentation Transcript")
+    # Transcript Input
+    st.header("Demo Transcript")
     transcript = st.text_area("Paste transcript here:", height=200)
 
     if "gpt_analysis" not in st.session_state:
         st.session_state["gpt_analysis"] = None
 
-    if st.button("Analyze Presentation"):
+    # Step 1: Analyze
+    if st.button("Analyze Demo"):
         if not transcript.strip():
             st.error("Please paste a transcript.")
         elif not rep_name:
@@ -123,8 +253,10 @@ def main():
                 analysis = analyzer.analyze_demo_performance(transcript)
                 st.session_state["gpt_analysis"] = analysis
                 if analysis:
-                    display_analysis(analysis)
+                    # Show the full bullet-style analysis right away
+                    show_analysis_pretty(analysis)
 
+    # Step 2: Confirm & Send
     if st.button("Confirm & Send to DB"):
         analysis = st.session_state["gpt_analysis"]
         if not analysis:
