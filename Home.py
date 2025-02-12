@@ -283,7 +283,7 @@ def main():
         demo_date = st.date_input("Demo Date")
         
     st.title("Demo Analysis Tool")
-    PreDemoChecklist.display()
+    #PreDemoChecklist.display()
 
     st.header("Demo Recording Analysis")
     transcript = st.text_area("Paste demo transcript:", height=200)

@@ -5,7 +5,8 @@ import streamlit as st
 @st.cache_resource
 def get_connection():
     """
-    Returns a cached connection to PostgreSQL using credentials from st.secrets["postgres"].
+    Returns a cached connection to PostgreSQL using secrets.
+    Remove @st.cache_resource if you want a new connection per query.
     """
     conn = psycopg2.connect(
         host=st.secrets["postgres"]["host"],
@@ -18,26 +19,32 @@ def get_connection():
 
 def init_db():
     """
-    Creates 'reps' and 'demo_analysis' tables if they don't already exist.
+    Creates teams, reps, and demo_analysis tables if needed.
     """
     conn = get_connection()
     cur = conn.cursor()
 
-    # Table: reps
-    cur.execute(
-        """
+    # 1) Teams table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS teams (
+            id SERIAL PRIMARY KEY,
+            team_name TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # 2) Reps table
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS reps (
             id SERIAL PRIMARY KEY,
             rep_name TEXT UNIQUE NOT NULL,
-            team TEXT NOT NULL,
+            team TEXT NOT NULL,  -- storing the string name from 'teams.team_name'
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-        """
-    )
+    """)
 
-    # Table: demo_analysis
-    cur.execute(
-        """
+    # 3) Demo analyses
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS demo_analysis (
             id SERIAL PRIMARY KEY,
             rep_name TEXT NOT NULL,
@@ -47,116 +54,128 @@ def init_db():
             analysis_json TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-        """
-    )
+    """)
 
     conn.commit()
     cur.close()
     #conn.close()
 
+# --------------------
+# Teams Table Functions
+# --------------------
+def fetch_all_teams():
+    """
+    Returns [(id, team_name, created_at), ...]
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, team_name, created_at FROM teams ORDER BY team_name ASC")
+    rows = cur.fetchall()
+    cur.close()
+    return rows
 
-# ----------------------
+def insert_team(team_name):
+    """
+    Insert a new team by name. If it already exists, ignore.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO teams (team_name)
+        VALUES (%s)
+        ON CONFLICT (team_name) DO NOTHING
+    """, (team_name,))
+    conn.commit()
+    cur.close()
+
+def delete_team(team_id):
+    """
+    Delete a team by its numeric id.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM teams WHERE id = %s", (team_id,))
+    conn.commit()
+    cur.close()
+
+# --------------------
 # Reps Table Functions
-# ----------------------
+# --------------------
 def fetch_all_reps():
     """
-    Returns list of tuples (id, rep_name, team, created_at).
+    Returns [(id, rep_name, team, created_at), ...]
+    'team' is just a string that matches one of the 'teams.team_name'
     """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT id, rep_name, team, created_at FROM reps ORDER BY rep_name ASC")
     rows = cur.fetchall()
     cur.close()
-    #conn.close()
     return rows
 
-def insert_rep(rep_name, team):
+def insert_rep(rep_name, team_name):
     """
-    Inserts a new rep into 'reps' table (ignores duplicates).
+    Insert a rep with the given name & team string
     """
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute(
-        """
+    cur.execute("""
         INSERT INTO reps (rep_name, team)
         VALUES (%s, %s)
         ON CONFLICT (rep_name) DO NOTHING
-        """,
-        (rep_name, team),
-    )
+    """, (rep_name, team_name))
     conn.commit()
     cur.close()
-    #conn.close()
 
 def delete_rep(rep_id):
     """
-    Removes a rep by ID.
+    Delete a rep by ID
     """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("DELETE FROM reps WHERE id = %s", (rep_id,))
     conn.commit()
     cur.close()
-    #conn.close()
 
 def get_rep_team(rep_name):
     """
-    Returns the team (e.g. 'DME' or 'Ortho') for the given rep_name, or None if not found.
+    Return the 'team' string for the rep, or None if not found.
     """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT team FROM reps WHERE rep_name = %s", (rep_name,))
     row = cur.fetchone()
     cur.close()
-    #conn.close()
     return row[0] if row else None
 
-
-# -----------------------------
-# Demo Analysis Table Functions
-# -----------------------------
+# --------------------
+# Demo Analysis Table
+# --------------------
 def insert_demo_result(rep_name, rep_team, customer_name, demo_date, analysis_json):
-    """
-    Insert a record into demo_analysis table.
-    """
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute(
-        """
+    cur.execute("""
         INSERT INTO demo_analysis (rep_name, rep_team, customer_name, demo_date, analysis_json)
         VALUES (%s, %s, %s, %s, %s)
-        """,
-        (rep_name, rep_team, customer_name, demo_date, analysis_json),
-    )
+    """, (rep_name, rep_team, customer_name, demo_date, analysis_json))
     conn.commit()
     cur.close()
-    #conn.close()
 
 def fetch_all_results():
-    """
-    Returns rows: (id, rep_name, rep_team, customer_name, demo_date, analysis_json, created_at).
-    """
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute(
-        """
+    cur.execute("""
         SELECT id, rep_name, rep_team, customer_name, demo_date, analysis_json, created_at
         FROM demo_analysis
         ORDER BY id DESC
-        """
-    )
+    """)
     rows = cur.fetchall()
     cur.close()
-    #conn.close()
     return rows
 
 def delete_analysis_record(analysis_id):
-    """
-    Delete a row from the demo_analysis table by ID.
-    """
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("DELETE FROM demo_analysis WHERE id = %s", (analysis_id,))
     conn.commit()
     cur.close()
-    #conn.close()
