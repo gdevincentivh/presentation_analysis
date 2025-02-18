@@ -176,7 +176,7 @@ TRANSCRIPT:
 {transcript}
 """
             response = openai.chat.completions.create(
-                model="o3-mini",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
